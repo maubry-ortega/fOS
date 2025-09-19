@@ -1,0 +1,12 @@
+[build]
+target = "aarch64-unknown-none"
+
+[target.aarch64-unknown-none]
+rustflags = ["-Clink-arg=--image-base=0x200000", "-Clink-arg=-Ttext=0x200000"]
+# linker = "zig" # Deshabilitado temporalmente
+
+# [env]
+# CC_aarch64_unknown_none = "zig cc -target aarch64-freestanding-none -lc"
+# AR_aarch64_unknown_none = "zig ar"
+
+

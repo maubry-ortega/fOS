@@ -1,0 +1,28 @@
+[package]
+name = "fos_microkernel"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "fos_microkernel"
+path = "src/main.rs"
+
+[dependencies]
+# Graphics support
+embedded-graphics = { version = "0.8", default-features = false }
+embedded-graphics-simulator = { version = "0.7", optional = true }
+tinybmp = { version = "0.6", default-features = false }
+linked_list_allocator = "0.10.5"
+
+# Runtime WASM simple - usaremos un approach custom
+# para evitar dependencias pesadas en el microkernel
+
+[profile.release]
+panic = "abort"
+lto = true
+codegen-units = 1
+
+[target.aarch64-unknown-none]
+rustflags = [
+    "-C", "link-arg=-Tlinker.ld"
+]

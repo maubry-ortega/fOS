@@ -1,0 +1,38 @@
+# Ignore Rust build artifacts
+/target/
+**/target/
+
+# Ignore Zig build artifacts
+/zig-out/
+/.zig-cache/
+**/zig-out/
+**/zig-cache/
+
+# Ignore general build directory
+/build/
+
+# Ignore build artifacts
+*.bin
+*.img
+*.wasm
+*.wpk
+*.a
+*.o
+*.d
+*.rlib
+*.rmeta
+
+# Ignore Cargo lock files (optional, but good for libraries)
+**/Cargo.lock
+
+# Ignore backup files
+*.bak
+
+# IDE/Editor specific files
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS-specific files
+.DS_Store

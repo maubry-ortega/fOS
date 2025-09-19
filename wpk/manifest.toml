@@ -1,0 +1,6 @@
+name = "app"
+id = "com.fos.app"
+version = "0.1.0"
+entry = "app.wasm"
+permissions = ["log"]
+min_platform = "fOS:0.1"
