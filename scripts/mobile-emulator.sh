@@ -14,7 +14,7 @@ NC='\033[0m'
 # Configuración del dispositivo móvil virtual
 DEVICE_NAME="FerroPhone"
 CPU_CORES=4
-RAM_SIZE="2G"
+RAM_SIZE="1G"
 STORAGE_SIZE="8G"
 SCREEN_WIDTH=1080
 SCREEN_HEIGHT=1920
@@ -137,36 +137,17 @@ start_emulator() {
     echo "   Almacenamiento: ${STORAGE_SIZE}"
     echo
     
-    # Configuración específica para dispositivo móvil
+    # Configuración específica para Raspberry Pi 3 (emulada)
     QEMU_ARGS=(
-        -machine virt
-        -cpu cortex-a72
-        -smp ${CPU_CORES}
+        -machine raspi3b
         -m ${RAM_SIZE}
         -kernel "$KERNEL_IMG"
         
-        # Gráficos: Usar virtio-gpu-pci, el estándar para virtualización.
-        # El framebuffer se mapeará a una dirección conocida por el kernel.
-        -device virtio-gpu-pci
+        # Gráficos: La RPi4 emulada usa su propia GPU VideoCore VI
+        # No necesitamos virtio-gpu-pci ni drivers extra
         -display sdl,window-close=off
         
-        # Almacenamiento
-        -drive file="$SYSTEM_IMG",if=virtio,format=qcow2
-        -drive file="$USERDATA_IMG",if=virtio,format=qcow2
-        
-        # Conectividad
-        -netdev user,id=net0,hostfwd=tcp::5555-:5555
-        -device virtio-net-pci,netdev=net0
-        
-        # Audio (para llamadas/multimedia)
-        -device intel-hda
-        -device hda-duplex
-        
-        # USB (para conectar dispositivos)
-        -device qemu-xhci,id=xhci
-        -device usb-tablet,bus=xhci.0
-        
-        # Serial para debugging
+        # Serial para debugging (PL011)
         -serial stdio
         
         # Monitor para comandos

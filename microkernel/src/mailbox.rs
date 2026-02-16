@@ -7,7 +7,8 @@
 use core::ptr;
 
 // Mailbox registers (BCM2835 ARM Peripherals manual, Section 1.3.1)
-const MAILBOX_BASE: usize = 0xFE00_B880; // Mailbox base address for RPi4
+// Mailbox registers (BCM2835 ARM Peripherals manual, Section 1.3.1)
+const MAILBOX_BASE: usize = 0x3F00_B880; // Mailbox base address for RPi3
 const MAILBOX_READ: *mut u32 = (MAILBOX_BASE + 0x00) as *mut u32;
 const MAILBOX_POLL: *mut u32 = (MAILBOX_BASE + 0x10) as *mut u32;
 const MAILBOX_SENDER: *mut u32 = (MAILBOX_BASE + 0x14) as *mut u32;

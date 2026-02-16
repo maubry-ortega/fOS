@@ -21,14 +21,57 @@ fn uart_init() {
 use mobile_os::MobileSystem;
 use wasm_runner::WasmRunner;
 use graphics::GraphicsManager;
-use fos_microkernel::{uart_send_str, print_number};
+use fos_microkernel::{uart_send, uart_send_str, print_number, uart_receive_non_blocking};
 
 // WASM de la aplicación embebida (generada por el SDK de Zig)
 #[unsafe(link_section = ".rodata.wasm")]
 static APP_WASM: &[u8] = include_bytes!("../../app.wasm");
 
+core::arch::global_asm!(
+    ".section .text._start",
+    ".global _start",
+    "_start:",
+    // Park secondary cores (only Core 0 runs)
+    "    mrs x0, mpidr_el1",
+    "    and x0, x0, #3",
+    "    cbz x0, 1f",
+    "2:", // Hang secondary cores
+    "    wfe",
+    "    b 2b",
+    "1:",
+    
+    "    ldr x30, =__stack_top",
+    "    mov sp, x30",
+    
+    // Check Current Exception Level (EL)
+    "    mrs x0, CurrentEL",
+    "    lsr x0, x0, #2",
+    "    cmp x0, #2",
+    "    b.eq 1f", // Jump to EL2 code if EL == 2
+    
+    // Code for EL1
+    "    b 2f", 
+    
+    "1:", // EL2 Code
+    // Enable FP in EL2 (CPTR_EL2 = 0 clears TFP bit)
+    "    msr cptr_el2, xzr",
+    "    b 3f",
+    
+    "2:", // EL1 Code
+    // Enable FP in EL1 (CPACR_EL1.FPEN = 11)
+    "    mrs x0, cpacr_el1",
+    "    orr x0, x0, #(3 << 20)",
+    "    msr cpacr_el1, x0",
+    
+    "3:", // FPU Done
+    "    isb",
+    
+    "    bl kernel_main",
+    "    b ."
+);
+
 #[unsafe(no_mangle)]
-pub extern "C" fn _start() -> ! {
+pub extern "C" fn kernel_main() -> ! {
     // Inicializar UART para comunicación
     uart_init();
     
@@ -85,10 +128,78 @@ pub extern "C" fn _start() -> ! {
     uart_send_str("[KERNEL] Sistema listo para producción\n\n");
     
     // En un OS real, aquí se iniciaría el planificador (scheduler).
-    // Para esta demo, entramos en un bucle infinito para mantener la
-    // pantalla visible. Cierra la ventana de QEMU para salir.
+    // Para esta demo, entramos en un bucle interactivo (Kernel Shell).
+    uart_send_str("💻 KERNEL SHELL ACTIVO\n");
+    uart_send_str("  [h] Ayuda  [c] Limpiar  [r] Re-ejecutar  [i] Info\n\n");
+    
+    // UI del Shell
+    graphics.set_color(graphics::colors::BLUE);
+    graphics.clear_screen(); // Fill with blue
+    
+    // Header
+    graphics.set_color(graphics::colors::WHITE);
+    graphics.draw_rect(0, 0, 640, 30, true); // White header bar
+    graphics.set_color(graphics::colors::BLUE);
+    graphics.draw_text_at("FerroOS Mobile Shell", 10, 5); // Blue text on white
+    
+    // Content
+    graphics.set_color(graphics::colors::WHITE);
+    graphics.draw_text("\n\n> KERNEL SHELL ACTIVO");
+    graphics.draw_text("> Escuchando UART (Escribe en tu terminal)...");
+    
     loop {
-        // En un sistema real, aquí se pondría la CPU en bajo consumo.
+        if let Some(c) = uart_receive_non_blocking() {
+            // Echo en pantalla (simple)
+            // En un sistema real usaríamos un buffer circular para la consola
+            
+            match c {
+                b'h' => {
+                    uart_send_str("\n--- COMANDOS DISPONIBLES ---\n");
+                    graphics.set_color(graphics::colors::YELLOW);
+                    graphics.draw_text("\n> [h] Ayuda:");
+                    graphics.set_color(graphics::colors::WHITE);
+                    graphics.draw_text("  c: Limpiar pantalla");
+                    graphics.draw_text("  r: Re-ejecutar app");
+                    graphics.draw_text("  i: Info sistema");
+                },
+                b'c' => {
+                    uart_send_str("\n🧹 Limpiando pantalla...\n");
+                    graphics.clear_screen();
+                    graphics.set_color(graphics::colors::WHITE);
+                    graphics.draw_text("> Pantalla limpia.");
+                },
+                b'r' => {
+                    uart_send_str("\n🔄 Re-ejecutando aplicación...\n");
+                    graphics.clear_screen();
+                    let success = wasm_runner.run_wasm_app_with_graphics(APP_WASM, &mut graphics);
+                    if success {
+                        uart_send_str("✅ Re-ejecución completada\n");
+                        graphics.set_color(graphics::colors::GREEN);
+                        graphics.draw_text("\n> App finalizada.");
+                    }
+                },
+                b'i' => {
+                    uart_send_str("\n📊 INFO DEL SISTEMA\n");
+                    graphics.set_color(graphics::colors::CYAN);
+                    graphics.draw_text("\n> INFO SISTEMA:");
+                    graphics.set_color(graphics::colors::WHITE);
+                    graphics.draw_text("  OS: FerroOS Mobile v0.1");
+                    graphics.draw_text("  Res: 640x480 (16-bit)");
+                },
+                other => {
+                    // Echo visual de cualquier otra tecla
+                    let buf = [other];
+                    if let Ok(s) = core::str::from_utf8(&buf) {
+                        graphics.set_color(graphics::colors::WHITE);
+                        graphics.draw_text(s);
+                    }
+                    uart_send(other); // Echo UART
+                }
+            }
+        }
+        
+        // Pequeña pausa para no saturar CPU
+        for _ in 0..1000 { unsafe { core::ptr::read_volatile(&0u32); } }
     }
 }
 
