@@ -127,19 +127,18 @@ check-tools:
 	@printf "$(GREEN)✅ Rust: $$(rustc --version | cut -d' ' -f2)$(NC)\n"
 	@echo
 
-# Sincronizar archivo Lua
-sync-lua:
-	@printf "$(BLUE)📝 SINCRONIZANDO CÓDIGO LUA$(NC)\n"
+# Extraer WASM de WPK para app de usuario
+wpk-extract:
+	@printf "$(BLUE)📦 EXTRAYENDO APP DE WPK$(NC)\n"
 	@echo "──────────────────────────"
-	@if [ ! -f "$(LUA_APP)" ]; then \
-		printf "$(RED)❌ $(LUA_APP) no encontrado$(NC)\n"; \
-		exit 1; \
+	@if [ ! -f "apps/user.wpk" ]; then \
+		printf "$(YELLOW)⚠️  user.wpk no encontrado, creando desde ejemplo...$(NC)\n"; \
+		cd examples && ../tools/fos -cP hello.lua && mv hello.wpk ../apps/user.wpk && cd ..; \
 	fi
-	@printf "$(GREEN)✅ $(LUA_APP) encontrado ($$(wc -c < $(LUA_APP)) bytes)$(NC)\n"
-	@mkdir -p $(SDK_DIR)/src/assets $(WPK_DIR)/assets
-	@cp $(LUA_APP) $(SDK_DIR)/src/assets/$(LUA_APP)
-	@cp $(LUA_APP) $(WPK_DIR)/assets/$(LUA_APP)
-	@printf "$(GREEN)✅ Archivos sincronizados$(NC)\n"
+	@unzip -q -o apps/user.wpk -d build/wpk_temp
+	@cp build/wpk_temp/app.wasm app.wasm
+	@rm -rf build/wpk_temp
+	@printf "$(GREEN)✅ app.wasm extraído de WPK ($$(wc -c < app.wasm) bytes)$(NC)\n"
 	@echo
 
 # Compilar y ejecutar demo

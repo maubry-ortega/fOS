@@ -1,0 +1,18 @@
+-- Settings App (Lua)
+clear_screen()
+set_color("white")
+draw_rect(0, 0, 640, 480, "true")
+set_color("black")
+draw_text_at("=== CONFIGURACION ===", 220, 20)
+draw_rect(0, 50, 640, 2, "true")
+
+draw_text_at("1. Brillo: [||||||||||] 100%", 50, 80)
+draw_text_at("2. Volumen: [||||||....] 60%", 50, 120)
+draw_text_at("3. Wi-Fi: CONECTADO (5G)", 50, 160)
+draw_text_at("4. Bluetooth: ACTIVADO", 50, 200)
+draw_text_at("5. Version: FerroOS Mobile 0.1", 50, 240)
+
+set_color("blue")
+draw_rect(40, 400, 560, 40, "true")
+set_color("white")
+draw_text_at("Presiona 'q' para guardar y salir", 180, 412)

@@ -118,6 +118,8 @@ pub fn build(b: *std.Build) void {
 
     // WASM (WASI) app build: produces an executable component-like wasm
     const wasm_target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .wasi });
+    
+    // User App (app.wasm)
     const wasm_mod = b.createModule(.{
         .root_source_file = b.path("src/wasm_app.zig"),
         .target = wasm_target,
@@ -130,6 +132,34 @@ pub fn build(b: *std.Build) void {
     wasm_exe.entry = .{ .symbol_name = "_start" };
     const wasm_install = b.addInstallArtifact(wasm_exe, .{});
 
-    const wasm_step = b.step("wasm", "Build WASM (WASI) app");
+    // Terminal App (terminal.wasm)
+    const wasm_terminal_mod = b.createModule(.{
+        .root_source_file = b.path("src/wasm_terminal.zig"),
+        .target = wasm_target,
+        .optimize = optimize,
+    });
+    const wasm_terminal_exe = b.addExecutable(.{
+        .name = "terminal",
+        .root_module = wasm_terminal_mod,
+    });
+    wasm_terminal_exe.entry = .{ .symbol_name = "_start" };
+    const wasm_terminal_install = b.addInstallArtifact(wasm_terminal_exe, .{});
+
+    // Settings App (settings.wasm)
+    const wasm_settings_mod = b.createModule(.{
+        .root_source_file = b.path("src/wasm_settings.zig"),
+        .target = wasm_target,
+        .optimize = optimize,
+    });
+    const wasm_settings_exe = b.addExecutable(.{
+        .name = "settings",
+        .root_module = wasm_settings_mod,
+    });
+    wasm_settings_exe.entry = .{ .symbol_name = "_start" };
+    const wasm_settings_install = b.addInstallArtifact(wasm_settings_exe, .{});
+
+    const wasm_step = b.step("wasm", "Build WASM (WASI) apps");
     wasm_step.dependOn(&wasm_install.step);
+    wasm_step.dependOn(&wasm_terminal_install.step);
+    wasm_step.dependOn(&wasm_settings_install.step);
 }

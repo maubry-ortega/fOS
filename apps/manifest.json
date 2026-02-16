@@ -1,0 +1,33 @@
+{
+    "version": "1.0",
+    "apps": [
+        {
+            "id": "com.ferroos.terminal",
+            "name": "Terminal",
+            "version": "1.0.0",
+            "description": "Terminal de comandos FerroOS",
+            "icon": "terminal",
+            "wasm_file": "terminal.wasm",
+            "category": "system"
+        },
+        {
+            "id": "com.ferroos.settings",
+            "name": "Ajustes",
+            "version": "1.0.0",
+            "description": "Configuración del sistema",
+            "icon": "settings",
+            "wasm_file": "settings.wasm",
+            "category": "system"
+        },
+        {
+            "id": "com.user.app",
+            "name": "Mi App",
+            "version": "0.1.0",
+            "description": "Aplicación de usuario demo",
+            "icon": "app",
+            "wasm_file": "../app.wasm",
+            "category": "user",
+            "installable": true
+        }
+    ]
+}

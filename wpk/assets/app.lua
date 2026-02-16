@@ -1,56 +1,37 @@
--- FerroOS Mobile App - UI Gráfica en Lua
--- Pipeline: Lua → Zig → WASM → Rust
-
--- Limpiar pantalla y configurar
+-- Ejemplo: App de Notas
 clear_screen()
-set_color("blue")
-draw_text_at("FerroOS Mobile", 300, 50)
 
--- Título de la aplicación
-set_color("white")
-draw_text_at("📱 Messenger Pro v2.1", 280, 100)
-
--- Barra de estado
-set_color("green")
-draw_rect(50, 140, 700, 3, true)
-
--- Información de conexión
+-- Fondo
 set_color("yellow")
-draw_text("🚀 Iniciando aplicación...")
-draw_text("✓ Conectando a servidor...")
-set_color("green")
-draw_text("✓ Verificando permisos...")
-draw_text("✓ Cargando contactos...")
+draw_rect(0, 0, 640, 480, "true")
 
--- Separador
-set_color("purple")
-draw_rect(100, 280, 600, 2, true)
-
--- Mensajes recientes
-set_color("cyan")
-draw_text_at("💬 Mensajes recientes:", 100, 300)
-
-set_color("white")
-draw_text("  • María: ¿Vienes a la reunión?")
-draw_text("  • Luis: ¡El proyecto quedó genial!")
-draw_text("  • Ana: Gracias por la ayuda")
-
--- Notificaciones
-set_color("orange")
-draw_text_at("🔔 3 notificaciones pendientes", 100, 450)
-
--- Estado del sistema
-set_color("green")
-draw_text("⚡ Ahorro de batería: ACTIVO")
-
--- Marco de la aplicación
-set_color("blue")
-draw_rect(40, 40, 720, 520, false)
-
--- Botón de estado
-set_color("green")
-draw_rect(300, 500, 200, 40, true)
+-- Header
 set_color("black")
-draw_text_at("✅ APLICACIÓN LISTA", 320, 510)
+draw_text_at("=== MIS NOTAS ===", 240, 20)
 
+-- Nota 1
+set_color("white")
+draw_rect(50, 60, 540, 80, "true")
+set_color("black")
+draw_text_at("Comprar leche", 70, 80)
+draw_text_at("Recordatorio para mañana", 70, 105)
 
+-- Nota 2
+set_color("white")
+draw_rect(50, 160, 540, 80, "true")
+set_color("black")
+draw_text_at("Reunion a las 3pm", 70, 180)
+draw_text_at("Con el equipo de desarrollo", 70, 205)
+
+-- Nota 3
+set_color("white")
+draw_rect(50, 260, 540, 80, "true")
+set_color("black")
+draw_text_at("Estudiar Lua", 70, 280)
+draw_text_at("Crear apps para FerroOS", 70, 305)
+
+-- Botón agregar
+set_color("green")
+draw_rect(250, 380, 140, 50, "true")
+set_color("white")
+draw_text_at("+ Nueva Nota", 270, 400)

@@ -2,7 +2,7 @@
 //! 
 //! Procesa aplicaciones .wpk que contienen scripts Lua embebidos en WASM
 
-use fos_microkernel::{uart_send_str, print_number};
+use fos_microkernel::{uart_send_str};
 use crate::graphics::{GraphicsManager, colors};
 
 /// Runtime WASM que extrae y ejecuta scripts Lua
@@ -55,11 +55,15 @@ impl WasmRunner {
 
     /// Extraer script Lua del binario WASM
     fn extract_lua_from_wasm<'a>(&self, wasm_data: &'a [u8]) -> Option<&'a str> {
-        // Buscar el patrón "print(" en el WASM para encontrar el script Lua
-        for i in 0..(wasm_data.len().saturating_sub(6)) {
-            if &wasm_data[i..i+6] == b"print(" {
-                // Encontramos el inicio del script Lua embebido
-                return self.find_lua_script_at(wasm_data, i);
+        // Buscar patrones comunes de comandos Lua gráficos
+        let patterns: &[&[u8]] = &[b"clear_screen(", b"set_color(", b"draw_text(", b"print("];
+        
+        for pattern in patterns {
+            for i in 0..(wasm_data.len().saturating_sub(pattern.len())) {
+                if &wasm_data[i..i+pattern.len()] == *pattern {
+                    // Encontramos el inicio del script Lua embebido
+                    return self.find_lua_script_at(wasm_data, i);
+                }
             }
         }
         None
@@ -87,8 +91,9 @@ impl WasmRunner {
 
         // Convertir a string si es válido UTF-8
         if let Ok(script) = core::str::from_utf8(&wasm_data[script_start..script_end]) {
-            // Verificar que realmente parece un script Lua
-            if script.contains("print(") && script.len() > 20 {
+            // Verificar que realmente parece un script Lua (contiene algún comando)
+            if (script.contains("print(") || script.contains("clear_screen(") || 
+                script.contains("set_color(") || script.contains("draw_")) && script.len() > 20 {
                 return Some(script);
             }
         }
@@ -116,12 +121,29 @@ impl WasmRunner {
             self.parse_and_execute_lua_command(line, graphics);
 
             // Pequeña pausa para ver el dibujo progresivo
-            for _ in 0..200000 {
+            for _ in 0..200 {
                 unsafe { core::ptr::read_volatile(&0u32) };
             }
         }
 
         uart_send_str("✅ Script Lua interpretado completamente\n");
+        uart_send_str("   Presiona 'q' para salir...\n");
+        
+        // WAIT LOOP - mantener la app visible hasta que el usuario presione 'q'
+        loop {
+            // Small delay
+            for _ in 0..50000 {
+                unsafe { core::ptr::read_volatile(&0u32) };
+            }
+            
+            // Check for exit key
+            if let Some(c) = fos_microkernel::uart_receive_non_blocking() {
+                 if c == b'q' || c == 27 { // q or Esc
+                      uart_send_str("🔙 Saliendo de la App...\n");
+                      return;
+                 }
+            }
+        }
     }
 
     /// Parsea y ejecuta un comando gráfico de Lua

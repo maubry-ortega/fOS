@@ -10,9 +10,12 @@ use core::ptr;
 // Mailbox registers (BCM2835 ARM Peripherals manual, Section 1.3.1)
 const MAILBOX_BASE: usize = 0x3F00_B880; // Mailbox base address for RPi3
 const MAILBOX_READ: *mut u32 = (MAILBOX_BASE + 0x00) as *mut u32;
+#[allow(dead_code)]
 const MAILBOX_POLL: *mut u32 = (MAILBOX_BASE + 0x10) as *mut u32;
+#[allow(dead_code)]
 const MAILBOX_SENDER: *mut u32 = (MAILBOX_BASE + 0x14) as *mut u32;
 const MAILBOX_STATUS: *mut u32 = (MAILBOX_BASE + 0x18) as *mut u32;
+#[allow(dead_code)]
 const MAILBOX_CONFIG: *mut u32 = (MAILBOX_BASE + 0x1C) as *mut u32;
 const MAILBOX_WRITE: *mut u32 = (MAILBOX_BASE + 0x20) as *mut u32;
 
@@ -33,6 +36,7 @@ pub const MBOX_TAG_GET_PITCH: u32 = 0x00040008;
 // Request and response codes
 pub const MBOX_REQUEST: u32 = 0;
 const MBOX_RESPONSE_SUCCESS: u32 = 0x8000_0000;
+#[allow(dead_code)]
 const MBOX_RESPONSE_ERROR: u32 = 0x8000_0001;
 
 /// A mailbox message buffer.

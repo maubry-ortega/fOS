@@ -2,7 +2,7 @@
 
 // Microkernel móvil minimalista
 
-use core::ptr;
+
 
 // Dirección UART PL011 para Raspberry Pi 3
 const UART0_BASE: usize = 0x3F20_1000;  // PL011 UART  

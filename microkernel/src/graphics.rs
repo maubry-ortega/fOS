@@ -1,7 +1,7 @@
 //! FerroOS Mobile - Módulo de gráficos embebido
 //! Sistema de gráficos básico para mostrar UI en pantalla
 
-use embedded_graphics::{mono_font::{ascii::FONT_9X18_BOLD, MonoTextStyleBuilder}, pixelcolor::Rgb888, prelude::*, primitives::{Rectangle, PrimitiveStyleBuilder}, text::{Baseline, Text}};
+use embedded_graphics::{pixelcolor::Rgb888, prelude::*, primitives::{Rectangle, PrimitiveStyleBuilder}};
 
 use crate::mailbox;
 use crate::uart_send_str;
@@ -23,6 +23,7 @@ pub mod colors {
     pub const YELLOW: Rgb888 = Rgb888::new(255, 255, 0);
     pub const PURPLE: Rgb888 = Rgb888::new(128, 0, 128);
     pub const ORANGE: Rgb888 = Rgb888::new(255, 165, 0);
+    #[allow(dead_code)]
     pub const CYAN: Rgb888 = Rgb888::new(0, 255, 255);
 }
 
@@ -117,8 +118,8 @@ impl OriginDimensions for FrameBuffer {
 pub struct GraphicsManager {
     framebuffer: FrameBuffer,
     current_color: Rgb888,
-    cursor_x: i32,
-    cursor_y: i32,
+    pub cursor_x: i32,
+    pub cursor_y: i32,
     line_height: i32,
 }
 
@@ -399,7 +400,6 @@ impl GraphicsManager {
         unsafe {
             if self.framebuffer.bytes_per_pixel == 2 {
                 // RGB565 (16-bit)
-                // RRRR RGGG GGGB BBBB
                 let r5 = (color.r() >> 3) as u16;
                 let g6 = (color.g() >> 2) as u16;
                 let b5 = (color.b() >> 3) as u16;
@@ -410,10 +410,83 @@ impl GraphicsManager {
             } else {
                 // BGRA8888 (32-bit)
                 let offset = (y as u32 * self.framebuffer.pitch + x as u32 * 4) as usize;
-                *self.framebuffer.pixels.add(offset) = color.b();     // Blue
-                *self.framebuffer.pixels.add(offset + 1) = color.g(); // Green
-                *self.framebuffer.pixels.add(offset + 2) = color.r(); // Red
-                *self.framebuffer.pixels.add(offset + 3) = 255;       // Alpha
+                *self.framebuffer.pixels.add(offset) = color.b();
+                *self.framebuffer.pixels.add(offset + 1) = color.g();
+                *self.framebuffer.pixels.add(offset + 2) = color.r();
+                *self.framebuffer.pixels.add(offset + 3) = 255;
+            }
+        }
+    }
+
+    /// Leer un pixel (necesario para guardar el fondo bajo el cursor)
+    fn get_pixel(&self, x: i32, y: i32) -> Rgb888 {
+         if x < 0 || x >= SCREEN_WIDTH as i32 || y < 0 || y >= SCREEN_HEIGHT as i32 {
+            return colors::BLACK;
+        }
+        
+        unsafe {
+            if self.framebuffer.bytes_per_pixel == 2 {
+                let offset = (y as u32 * self.framebuffer.pitch + x as u32 * 2) as usize;
+                let rgb565 = *(self.framebuffer.pixels.add(offset) as *const u16);
+                
+                // RGB565 to RGB888
+                let r = ((rgb565 >> 11) & 0x1F) as u8;
+                let g = ((rgb565 >> 5) & 0x3F) as u8;
+                let b = (rgb565 & 0x1F) as u8;
+                
+                // Expand to 8-bit (approximate)
+                Rgb888::new((r << 3) | (r >> 2), (g << 2) | (g >> 4), (b << 3) | (b >> 2))
+            } else {
+                let offset = (y as u32 * self.framebuffer.pitch + x as u32 * 4) as usize;
+                let b = *self.framebuffer.pixels.add(offset);
+                let g = *self.framebuffer.pixels.add(offset + 1);
+                let r = *self.framebuffer.pixels.add(offset + 2);
+                Rgb888::new(r, g, b)
+            }
+        }
+    }
+
+    /// Dibujar puntero del mouse (flecha simple)
+    pub fn draw_mouse_pointer(&mut self, x: i32, y: i32, color: Rgb888) {
+        // Sprite de 11x16 (Flecha)
+        // 1 = Pixel, 0 = Transparente
+        let cursor_bitmap: [u16; 16] = [
+            0b10000000000,
+            0b11000000000,
+            0b11100000000,
+            0b11110000000,
+            0b11111000000,
+            0b11111100000,
+            0b11111110000,
+            0b11111111000,
+            0b11111111100,
+            0b11111111110,
+            0b11111100000,
+            0b11101100000,
+            0b11001100000,
+            0b10000110000,
+            0b00000110000,
+            0b00000011000,
+        ];
+
+        for (row_idx, row) in cursor_bitmap.iter().enumerate() {
+            for col_idx in 0..11 {
+                if (row >> (10 - col_idx)) & 1 == 1 {
+                    let px = x + col_idx;
+                    let py = y + row_idx as i32;
+                    self.draw_pixel_manual(px, py, color);
+                }
+            }
+        }
+    }
+    
+    /// Dibujar Icono 16x16
+    pub fn draw_icon(&mut self, x: i32, y: i32, data: &[u16; 16], color: Rgb888) {
+        for (row_idx, row) in data.iter().enumerate() {
+            for col_idx in 0..16 {
+                if (row >> (15 - col_idx)) & 1 == 1 {
+                     self.draw_pixel_manual(x + col_idx as i32, y + row_idx as i32, color);
+                }
             }
         }
     }
